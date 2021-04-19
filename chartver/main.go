@@ -1,42 +1,39 @@
 package main
 
 import (
+	"flag"
 	"fmt"
 	"log"
 	"net/http"
-	"os"
 	"sort"
 	"time"
 
 	"gopkg.in/yaml.v2"
 )
 
-const defaultRepo = "https://svl-artifactory.juniper.net/atom-helm"
+var repoURL string
+var count int
 
 func main() {
-	var chartName string
-	if len(os.Args) > 1 {
-		chartName = os.Args[1]
-	}
+	flag.StringVar(&repoURL, "repo", "https://svl-artifactory.juniper.net/atom-helm", "URL of Helm Chart repo")
+	flag.IntVar(&count, "count", 5, "Limit number of versions of chart to display")
+	flag.Parse()
 
-	repoURL := defaultRepo
-	if len(os.Args) > 2 {
-		repoURL = os.Args[2]
-	}
-
-	index, err := getIndex(repoURL)
+	index, err := getIndex()
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	if chartName != "" {
-		printChartVersion(index, os.Args[1])
+	if len(flag.Args()) > 0 {
+		for _, chartName := range flag.Args() {
+			printChartVersion(index, chartName)
+		}
 	} else {
 		printChartNames(index)
 	}
 }
 
-func getIndex(repoURL string) (*Index, error) {
+func getIndex() (*Index, error) {
 	indexURL := repoURL + "/index.yaml"
 	log.Println("Fetching ", indexURL)
 
@@ -80,6 +77,8 @@ func printChartVersion(index *Index, chartName string) {
 		return
 	}
 
+	fmt.Println("Chart: ", chartName)
+
 	sort.Slice(entries, func(i, j int) bool {
 		return entries[i].Created.After(entries[j].Created)
 	})
@@ -87,9 +86,14 @@ func printChartVersion(index *Index, chartName string) {
 	fmt.Printf("%-30s %-30s Created\n", "Version", "AppVersion")
 	fmt.Println("----------------------------------------------------------------------------------------------------")
 
-	for _, entry := range entries {
+	for idx, entry := range entries {
+		if idx + 1 > count {
+			break
+		}
+
 		fmt.Printf("%-30s %-30s %v\n", entry.Version, entry.AppVersion, entry.Created)
 	}
+	fmt.Println("----------------------------------------------------------------------------------------------------\n")
 }
 
 type Index struct {
