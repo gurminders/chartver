@@ -35,14 +35,12 @@ func main() {
 
 func getIndex() (*Index, error) {
 	indexURL := repoURL + "/index.yaml"
-	log.Println("Fetching ", indexURL)
+	log.Println("Getting and parsing repo index ", indexURL)
 
 	res, err := http.Get(indexURL)
 	if err != nil {
 		return nil, err
 	}
-
-	log.Println("Fetch complete")
 
 	// read the yaml into memory
 	log.Println("Parsing index")
@@ -53,7 +51,7 @@ func getIndex() (*Index, error) {
 		return nil, err
 	}
 
-	log.Println("Parsing complete")
+	log.Println("Get complete")
 
 	return &index, nil
 }
