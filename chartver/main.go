@@ -26,7 +26,7 @@ func main() {
 
 	if len(flag.Args()) > 0 {
 		for _, chartName := range flag.Args() {
-			printChartVersion(index, chartName)
+			printChartVersion(index, chartName, true)
 		}
 	} else {
 		printChartNames(index)
@@ -62,36 +62,48 @@ func printChartNames(index *Index) {
 		charts = append(charts, key)
 	}
 
+	fmt.Printf("%-30s %-30s %-30s Created\n", "Chart", "Version", "AppVersion")
+	fmt.Println("----------------------------------------------------------------------------------------------------------------------------------")
+	count = 1; // only print the latest
+
 	sort.Strings(charts)
 	for _, name := range charts {
-		fmt.Println(name)
+		printChartVersion(index, name, false)
 	}
 }
 
-func printChartVersion(index *Index, chartName string) {
+func printChartVersion(index *Index, chartName string, headers bool) {
 	entries := index.Entries[chartName]
 	if entries == nil {
 		fmt.Println("Chart ", chartName, " not found in repository")
 		return
 	}
 
-	fmt.Println("Chart: ", chartName)
-
 	sort.Slice(entries, func(i, j int) bool {
 		return entries[i].Created.After(entries[j].Created)
 	})
 
-	fmt.Printf("%-30s %-30s Created\n", "Version", "AppVersion")
-	fmt.Println("----------------------------------------------------------------------------------------------------")
+	if headers {
+		fmt.Println("Chart: ", chartName)
+		fmt.Printf("%-30s %-30s Created\n", "Version", "AppVersion")
+		fmt.Println("----------------------------------------------------------------------------------------------------")
+	}
 
 	for idx, entry := range entries {
-		if idx + 1 > count {
+		if idx+1 > count {
 			break
 		}
 
-		fmt.Printf("%-30s %-30s %v\n", entry.Version, entry.AppVersion, entry.Created)
+		if headers {
+			fmt.Printf("%-30s %-30s %v\n", entry.Version, entry.AppVersion, entry.Created)
+		} else {
+			fmt.Printf("%-30s %-30s %-30s %v\n", chartName, entry.Version, entry.AppVersion, entry.Created)
+		}
 	}
-	fmt.Println("----------------------------------------------------------------------------------------------------\n")
+
+	if headers {
+		fmt.Println("----------------------------------------------------------------------------------------------------\n")
+	}
 }
 
 type Index struct {
